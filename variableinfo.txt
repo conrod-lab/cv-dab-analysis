@@ -1,0 +1,22 @@
+#Variables included in the previous models: 
+#TLFBCEQ_Dab            -> cateogircal (Y/N)  -> have they ever used dab
+#NewPLE_recode2         -> categorical (0-3)  -> PLEs recoded to include T-CTRL and T-cannabis
+#anymonthlycannabisCV   -> categorical (Y/N)  -> did they ever use cannabis at a frequency of once a month or higher
+#anymonthlycannabisPV   -> categorical (Y/N)  -> did they ever use cannabis at a frequency of once a month or higher
+#DEM_01                 -> categorical (M/F)
+#SES                    -> ordinal
+#AvggramsyearPV         -> continuous
+#AgeCannabisOnset       -> contiunous
+#anycaarmst1tot3 OR pleaveraget1t3  
+
+
+#Other variables that may be of interest:
+#anyweeklycannabisPV (cat, Y/N)
+#anyweeklycannabisCV (cat, Y/N)
+#cannabisquantPV (ordinal)
+#AvgCannabisCV (ordinal)
+#AvgCannabisPV (ordinal)
+#DEPAPO_ALC_CV (cat, Y/N)
+#DEPADO_12M_ALC_PV (cat, Y/N)
+#anyHScannabisy1toy5 (cat, Y/N)
+#missing is 9999
