@@ -56,7 +56,7 @@ corrplot(correlation_matrix, method = "color", type = "upper", order = "hclust",
 
 # Create training model
 set.seed(42)
-cv_5 <- trainControl(method = "cv", number = 5)
+cv_10 <- trainControl(method = "cv", number = 10)
 
 # Function to calculate accuracy
 calc_acc <- function(actual, predicted) {
@@ -68,8 +68,8 @@ hit_elnet <- train(
   anycaarmst1tot3 ~ TLFBCEQ_Dab * NewPLE_recode2 * anymonthlycannabisCV * anymonthlycannabisPV * DEM_01 * SES * AvggramsyearPV * AgeCannabisOnset, 
   data = subset_dataset,
   method = "glmnet",
-  trControl = cv_5
-)
+  trControl = cv_10
+) 
 
 print(hit_elnet)
 opt_reg_params <- hit_elnet$bestTune
@@ -101,10 +101,10 @@ if (weighted == TRUE) {
 }
 
 hit_elnet <- train(
-  anycaarmst1tot3 ~ TLFBCEQ_Dab * NewPLE_recode2 * anymonthlycannabisCV * anymonthlycannabisPV * DEM_01 * SES * AvggramsyearPV * AgeCannabisOnset, 
+  anycaarmst1tot3 ~ TLFBCEQ_Dab + NewPLE_recode2 + anymonthlycannabisCV + anymonthlycannabisPV + DEM_01 + SES + AvggramsyearPV + AgeCannabisOnset, 
   data = subset_dataset,
   method = "glmnet",
-  trControl = cv_5,
+  trControl = cv_10,
   weights = weights
 )
 
@@ -114,24 +114,63 @@ print(coefficients)
 calc_acc(actual = subset_dataset$anycaarmst1tot3, predicted = predict(hit_elnet, newdata = subset_dataset))
 table(subset_dataset$anycaarmst1tot3, predict(hit_elnet, newdata = subset_dataset))
 
-coefficients <- coef(hit_elnet$finalModel)
-print(coefficients)
+#coefficients <- coef(hit_elnet$finalModel)
+#print(coefficients)
 opt_lambda <- hit_elnet$bestTune$lambda
 opt_alpha <- hit_elnet$bestTune$alpha
 
 # Fitting the model with only relevant predictors
-fit <- glmnet(as.matrix(subset_dataset[, -which(names(subset_dataset) == "anycaarmst1tot3")]), as.numeric(subset_dataset[, "anycaarmst1tot3"]), 
-              lambda = opt_lambda)
-coef(fit)
-
+# fit <- glmnet(as.matrix(subset_dataset[, -which(names(subset_dataset) == "anycaarmst1tot3")]), as.numeric(subset_dataset[, "anycaarmst1tot3"]), 
+#               weights=weights,
+#               lambda = opt_lambda,
+#               alpha = opt_alpha,
+#               family=binomial)
+# coef(fit)
+# newx=as.matrix(subset_dataset[, -which(names(subset_dataset) == "anycaarmst1tot3")])
+# table(subset_dataset$anycaarmst1tot3, predict(fit,newx=newx))
 # Interaction only model
-model1 <- lm(as.numeric(anycaarmst1tot3) ~ TLFBCEQ_Dab * anymonthlycannabisCV * DEM_01, data = subset_dataset)
-summary(model1)
 
-# Model specifying which effects we want to look at
-model2 <- lm(as.numeric(anycaarmst1tot3) ~ TLFBCEQ_Dab + anymonthlycannabisCV + DEM_01 + 
+# model1 <- lm(as.numeric(anycaarmst1tot3) ~ TLFBCEQ_Dab * anymonthlycannabisCV * DEM_01, data = subset_dataset)
+# summary(model1)
+# 
+# # Model specifying which effects we want to look at
+# model2 <- lm(as.numeric(anycaarmst1tot3) ~ TLFBCEQ_Dab + anymonthlycannabisCV + DEM_01 + 
+#                TLFBCEQ_Dab:anymonthlycannabisCV + TLFBCEQ_Dab:DEM_01 + anymonthlycannabisCV:DEM_01, 
+#              data = subset_dataset)
+# 
+# table(subset_dataset$anycaarmst1tot3, predict(model2, newdata = subset_dataset))
+# summary(model2)
+
+########################################################## Subset model
+
+subset_dataset$anycaarmst1tot3 <- as.factor(subset_dataset$anycaarmst1tot3)#-1
+model3 <- glm(anycaarmst1tot3 ~ TLFBCEQ_Dab + anymonthlycannabisCV + DEM_01 + SES +
                TLFBCEQ_Dab:anymonthlycannabisCV + TLFBCEQ_Dab:DEM_01 + anymonthlycannabisCV:DEM_01, 
-             data = subset_dataset)
-summary(model2)
+             data = subset_dataset,
+             family = binomial,
+             weights=weights,
+             )
 
-table(subset_dataset$anycaarmst1tot3, predict(model2, newdata = subset_dataset))
+summary(model3)
+
+predicted_prob<- predict(model3, newdata = subset_dataset, type="response")
+binary_output <- ifelse(predicted_prob >= 0.5, 1, 0)
+
+
+table(subset_dataset$anycaarmst1tot3, binary_output)
+
+
+####################################################### Full model 
+
+model3 <- glm(anycaarmst1tot3 ~  TLFBCEQ_Dab * NewPLE_recode2 * anymonthlycannabisCV * anymonthlycannabisPV * DEM_01 * SES * AvggramsyearPV * AgeCannabisOnset,  
+              data = subset_dataset,
+#              weights=weights,
+              family = binomial)
+
+summary(model3)
+
+predicted_prob<- predict(model3, newdata = subset_dataset, type="response")
+binary_output <- ifelse(predicted_prob >= 0.5, 1, 0)
+
+
+table(subset_dataset$anycaarmst1tot3, binary_output)
